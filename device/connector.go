@@ -1,10 +1,13 @@
-package dev
+package device
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
 	"syscall"
 	"time"
 	"unsafe"
@@ -13,7 +16,10 @@ import (
 	"golang.org/x/text/transform"
 )
 
+//Opeartion represent the operation type
 type Opeartion string
+
+//FieldType represent the read field type
 type FieldType string
 
 const (
@@ -32,17 +38,28 @@ const (
 	ReadJPG              FieldType = `GetBMPData`
 )
 
-//Connector this is the class for invoke the low level method
+//Connector this is the class for invoke the dll's method
 type Connector struct {
-	isInitialed     bool
-	ReadyToReadData bool
-	DllPath         string
-	CardType        uint8
-	handle          *syscall.Handle
+	IsX64       bool
+	isInitialed bool
+	handle      *syscall.Handle
 }
 
+func (conn *Connector) getDLLPath() (filePath string) {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		fmt.Println(err)
+	}
+	var relativePath string
+	if relativePath = `./dll/64bit/`; !conn.IsX64 {
+		relativePath = `./dll/32bit/`
+	}
+	return path.Join(dir, relativePath, `Termb.dll`)
+}
+
+//Initial intial this connector
 func (conn *Connector) Initial() (successed bool) {
-	handle, err := syscall.LoadLibrary(conn.DllPath)
+	handle, err := syscall.LoadLibrary(conn.getDLLPath())
 	if err != nil {
 		panic("can't find the dll file")
 	}
@@ -96,7 +113,7 @@ func (conn *Connector) opertation(opType Opeartion, nargs uintptr, arg1 uintptr)
 	return true
 }
 
-//ReadFields read fields
+//ReadFields read fields, the result is the string type's field, the result1 has value when you try to get the photo
 func (conn *Connector) ReadFields(fieldType FieldType) (result string, result1 []byte, err error) {
 	if conn.handle == nil || conn.isInitialed == false {
 		panic("the connector hasn't been initialized")
