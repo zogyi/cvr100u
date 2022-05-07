@@ -11,5 +11,5 @@ go get github.com/zogyi/cvr100u
 conn := device.Connector{IsX64: true}
 ```
 
-##Notice
+### Notice
 The DLLs come from the ChinaVision's website, please download the latest files and replace them
